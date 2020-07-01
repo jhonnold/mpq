@@ -15,21 +15,26 @@ class Archive(path: Path) : AutoCloseable {
 
     init {
         val magic = this.readFromChannel(0, 4)
-        this.userData = if (magic.compareTo(UserData.headerId) == 0) this.readUserData() else null
+        this.userData = if (magic == UserData.headerId) this.readUserData() else null
 
         val headerOffset = userData?.headerOffset?.toLong() ?: 0
         this.header = this.readHeader(headerOffset)
     }
 
     private fun readUserData(): UserData {
-        val magic = this.readFromChannel(0, 4)
-        val userDataSize = this.readFromChannel(4, 4).getInt(0)
-        val headerOffset = this.readFromChannel(8, 4).getInt(0)
-        val userDataHeaderSize = this.readFromChannel(12, 4).getInt(0)
+        val buffer = this.readFromChannel(0, 16)
+
+        val magic = ByteArray(4)
+        buffer.get(magic)
+
+        val userDataSize = buffer.int
+        val headerOffset = buffer.int
+        val userDataHeaderSize = buffer.int
+
         val content = this.readFromChannel(16, userDataHeaderSize)
 
         return UserData(
-                magic,
+                ByteBuffer.wrap(magic),
                 userDataSize,
                 headerOffset,
                 userDataHeaderSize,
@@ -38,18 +43,22 @@ class Archive(path: Path) : AutoCloseable {
     }
 
     private fun readHeader(position: Long): Header {
-        val magic = this.readFromChannel(position, 4)
-        val headerSize = this.readFromChannel(position + 4, 4).getInt(0)
-        val archiveSize = this.readFromChannel(position + 8, 4).getInt(0)
-        val formatVersion = this.readFromChannel(position + 12, 2).getShort(0)
-        val sectorSizeShift = this.readFromChannel(position + 14, 2).getShort(0)
-        val hashTableOffset = this.readFromChannel(position + 16, 4).getInt(0)
-        val blockTableOffset = this.readFromChannel(position + 20, 4).getInt(0)
-        val hashTableEntries = this.readFromChannel(position + 24, 4).getInt(0)
-        val blockTableEntries = this.readFromChannel(position + 28, 4).getInt(0)
+        val buffer =  this.readFromChannel(position, 32)
+
+        val magic = ByteArray(4)
+        buffer.get(magic)
+
+        val headerSize = buffer.int
+        val archiveSize = buffer.int
+        val formatVersion = buffer.short
+        val sectorSizeShift = buffer.short
+        val hashTableOffset = buffer.int
+        val blockTableOffset = buffer.int
+        val hashTableEntries = buffer.int
+        val blockTableEntries = buffer.int
 
         return Header(
-                magic,
+                ByteBuffer.wrap(magic),
                 headerSize,
                 archiveSize,
                 formatVersion.toInt(),
@@ -70,7 +79,7 @@ class Archive(path: Path) : AutoCloseable {
         this.channel.read(buffer)
         this.channel.position(originalPosition)
 
-        return buffer.order(ByteOrder.LITTLE_ENDIAN)
+        return buffer.order(ByteOrder.LITTLE_ENDIAN).rewind()
     }
 
     override fun close() {
@@ -80,7 +89,7 @@ class Archive(path: Path) : AutoCloseable {
 
 class UserData(val magic: ByteBuffer, val userDataSize: Int, val headerOffset: Int, val userDataHeaderSize: Int, val content: ByteBuffer) {
     companion object {
-        val headerId: ByteBuffer = ByteBuffer.wrap(byteArrayOf('M'.toByte(), 'P'.toByte(), 'Q'.toByte(), 0x1B)).position(4)
+        val headerId: ByteBuffer = ByteBuffer.wrap(byteArrayOf('M'.toByte(), 'P'.toByte(), 'Q'.toByte(), 0x1B))
     }
 }
 

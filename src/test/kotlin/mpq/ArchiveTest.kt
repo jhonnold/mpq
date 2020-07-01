@@ -16,7 +16,7 @@ class ArchiveTest {
             val userData = it.userData
             assertNotNull(userData)
             assertEquals(
-                    ByteBuffer.wrap(byteArrayOf('M'.toByte(), 'P'.toByte(), 'Q'.toByte(), 0x1B)).position(4),
+                    ByteBuffer.wrap(byteArrayOf('M'.toByte(), 'P'.toByte(), 'Q'.toByte(), 0x1B)),
                     userData.magic)
             assertEquals(512, userData.userDataSize)
             assertEquals(1024, userData.headerOffset)
@@ -32,6 +32,9 @@ class ArchiveTest {
         Archive(resourcePath).use {
             val header = it.header
 
+            assertEquals(
+                    ByteBuffer.wrap(byteArrayOf('M'.toByte(), 'P'.toByte(), 'Q'.toByte(), 0x1A)),
+                    header.magic)
             assertEquals(208, header.headerSize)
             assertEquals(68730, header.archiveSize)
             assertEquals(3, header.formatVersion)
