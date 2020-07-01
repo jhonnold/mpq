@@ -5,11 +5,10 @@ import java.nio.ByteBuffer
 import java.nio.file.Paths
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 
 class ArchiveTest {
     @Test
-    fun init() {
+    fun userData() {
         val projectDirPath = Paths.get("").toAbsolutePath()
         val resourcePath = Paths.get(projectDirPath.toString(), "/src/test/resources/archive")
 
@@ -22,6 +21,25 @@ class ArchiveTest {
             assertEquals(512, userData.userDataSize)
             assertEquals(1024, userData.headerOffset)
             assertEquals(115, userData.userDataHeaderSize)
+        }
+    }
+
+    @Test
+    fun header() {
+        val projectDirPath = Paths.get("").toAbsolutePath()
+        val resourcePath = Paths.get(projectDirPath.toString(), "/src/test/resources/archive")
+
+        Archive(resourcePath).use {
+            val header = it.header
+
+            assertEquals(208, header.headerSize)
+            assertEquals(68730, header.archiveSize)
+            assertEquals(3, header.formatVersion)
+            assertEquals(5, header.sectorSizeShift)
+            assertEquals(67946, header.hashTableOffset)
+            assertEquals(68458, header.blockTableOffset)
+            assertEquals(32, header.hashTableEntries)
+            assertEquals(17, header.blockTableEntries)
         }
     }
 }

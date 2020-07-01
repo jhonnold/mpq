@@ -11,10 +11,14 @@ class Archive(path: Path) : AutoCloseable {
     private val channel: SeekableByteChannel = stream.channel
 
     val userData: UserData?
+    val header: Header
 
     init {
         val magic = this.readFromChannel(0, 4)
-        this.userData = if (magic.compareTo(UserData.headerId) == 0) readUserData() else null
+        this.userData = if (magic.compareTo(UserData.headerId) == 0) this.readUserData() else null
+
+        val headerOffset = userData?.headerOffset?.toLong() ?: 0
+        this.header = this.readHeader(headerOffset)
     }
 
     private fun readUserData(): UserData {
@@ -30,6 +34,30 @@ class Archive(path: Path) : AutoCloseable {
                 headerOffset,
                 userDataHeaderSize,
                 content
+        )
+    }
+
+    private fun readHeader(position: Long): Header {
+        val magic = this.readFromChannel(position, 4)
+        val headerSize = this.readFromChannel(position + 4, 4).getInt(0)
+        val archiveSize = this.readFromChannel(position + 8, 4).getInt(0)
+        val formatVersion = this.readFromChannel(position + 12, 2).getShort(0)
+        val sectorSizeShift = this.readFromChannel(position + 14, 2).getShort(0)
+        val hashTableOffset = this.readFromChannel(position + 16, 4).getInt(0)
+        val blockTableOffset = this.readFromChannel(position + 20, 4).getInt(0)
+        val hashTableEntries = this.readFromChannel(position + 24, 4).getInt(0)
+        val blockTableEntries = this.readFromChannel(position + 28, 4).getInt(0)
+
+        return Header(
+                magic,
+                headerSize,
+                archiveSize,
+                formatVersion.toInt(),
+                sectorSizeShift.toInt(),
+                hashTableOffset,
+                blockTableOffset,
+                hashTableEntries,
+                blockTableEntries
         )
     }
 
@@ -55,3 +83,6 @@ class UserData(val magic: ByteBuffer, val userDataSize: Int, val headerOffset: I
         val headerId: ByteBuffer = ByteBuffer.wrap(byteArrayOf('M'.toByte(), 'P'.toByte(), 'Q'.toByte(), 0x1B)).position(4)
     }
 }
+
+class Header(val magic: ByteBuffer, val headerSize: Int, val archiveSize: Int, val formatVersion: Int, val sectorSizeShift: Int,
+             val hashTableOffset: Int, val blockTableOffset: Int, val hashTableEntries: Int, val blockTableEntries: Int)
