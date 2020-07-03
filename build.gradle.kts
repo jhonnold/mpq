@@ -29,8 +29,8 @@ publishing {
             name = "GithubPackages"
             url = uri("https://maven.pkg.github.com/jhonnold/mpq-archive-parser")
             credentials {
-                username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_USERNAME")
-                password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
+                username = System.getenv("GITHUB_USERNAME")
+                password = System.getenv("GITHUB_TOKEN")
             }
         }
     }
