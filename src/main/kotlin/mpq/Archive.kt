@@ -1,10 +1,15 @@
 package mpq
 
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
+import java.io.ByteArrayInputStream
 import java.io.FileInputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.channels.SeekableByteChannel
+import java.nio.charset.StandardCharsets
 import java.nio.file.Path
+import java.util.zip.Inflater
+import kotlin.math.ceil
 
 class Archive(path: Path) : AutoCloseable {
     private val stream = FileInputStream(path.toFile())
@@ -15,6 +20,7 @@ class Archive(path: Path) : AutoCloseable {
     val header: Header
     val hashTable: List<HashEntry>
     val blockTable: List<BlockEntry>
+    val files: List<String>
 
     init {
         this.encryptionTable = this.prepEncryptionTable()
@@ -24,6 +30,10 @@ class Archive(path: Path) : AutoCloseable {
         this.header = this.readHeader()
         this.hashTable = this.readHashTable()
         this.blockTable = this.readBlockTable()
+
+        val listFileContents = this.getFileContents("(listfile)")
+        this.files = StandardCharsets.UTF_8.decode(listFileContents)
+                .toString().trim().split("\r\n", "\r", "\n")
     }
 
     private fun prepEncryptionTable(): LongArray {
@@ -78,6 +88,24 @@ class Archive(path: Path) : AutoCloseable {
         }
 
         return result.rewind()
+    }
+
+    private fun decompress(buffer: ByteBuffer, size: Int): ByteBuffer {
+        val dest = ByteArray(size)
+        val array = buffer.array()
+
+        when (val compressionType = buffer.get()) {
+            0x02.toByte() -> {
+                val inflater = Inflater()
+                inflater.setInput(array, 1, array.size - 1)
+                inflater.inflate(dest)
+                inflater.end()
+            }
+            0x10.toByte() -> BZip2CompressorInputStream(ByteArrayInputStream(array, 1, array.size - 1)).use { it.read(dest) }
+            else -> throw Exception("Compression Type: %d is not supported".format(compressionType))
+        }
+
+        return ByteBuffer.wrap(dest)
     }
 
     private fun readUserData(): UserData {
@@ -151,10 +179,10 @@ class Archive(path: Path) : AutoCloseable {
 
     private fun readBlockTable(): List<BlockEntry> {
         val key = this.hash("(block table)", HashType.TABLE)
-        val size = BlockEntry.SIZE * header.blockTableEntries
+        val tableSize = BlockEntry.SIZE * header.blockTableEntries
 
-        val encrypted = this.readFromChannel((header.offset + header.blockTableOffset).toLong(), size)
-        val decrypted = this.decrypt(encrypted, size, key)
+        val encrypted = this.readFromChannel((header.offset + header.blockTableOffset).toLong(), tableSize)
+        val decrypted = this.decrypt(encrypted, tableSize, key)
 
         return (0 until header.blockTableEntries).map {
             val offset = decrypted.int
@@ -177,6 +205,59 @@ class Archive(path: Path) : AutoCloseable {
 
         return buffer.order(ByteOrder.LITTLE_ENDIAN).rewind()
     }
+
+    fun getFileContents(filename: String): ByteBuffer {
+        val hashA = this.hash(filename, HashType.HASH_A)
+        val hashB = this.hash(filename, HashType.HASH_B)
+        val hashEntry = this.hashTable.find { it.fileHashA == hashA && it.fileHashB == hashB }
+                ?: throw Exception("File %s was not found in the Hash Table!".format(filename))
+
+        val blockEntry = this.blockTable[hashEntry.fileBlock]
+        if (blockEntry.size == 0) return ByteBuffer.allocate(0)
+
+        if (blockEntry.flags and 0x8000_0000.toInt() == 0)
+            throw Exception("File %S does not exist in block table!".format(filename))
+        if (blockEntry.flags and 0x0001_0000 != 0)
+            throw Exception("Encryption not supported")
+
+        val fileData = this.readFromChannel((this.header.offset + blockEntry.offset).toLong(), blockEntry.archivedSize)
+
+        if (blockEntry.flags and 0x0100_0000 != 0) {
+            if (blockEntry.flags and 0x0000_0200 != 0 && blockEntry.size > blockEntry.archivedSize)
+                return this.decompress(fileData, blockEntry.size)
+
+            return fileData
+        } else {
+            val result = ByteBuffer.allocate(blockEntry.size)
+
+            val sectorSize = 512 shl this.header.sectorSizeShift
+            var sectors = ceil(blockEntry.size.toDouble() / sectorSize).toInt()
+
+            var crc = false
+            if (blockEntry.flags and 0x0400_0000 != 0) {
+                crc = true
+                sectors++
+            }
+
+            val positions = (0..sectors).map { fileData.int }
+            val validSectors = positions.size - if (crc) 2 else 1
+
+            (0 until validSectors).forEach {
+                val archivedSectorSize = positions[it + 1] - positions[it]
+                val sector = ByteArray(archivedSectorSize)
+
+                fileData.get(sector)
+                val sectorBuffer = ByteBuffer.wrap(sector)
+                if (blockEntry.flags and 0x0000_0200 != 0) {
+                    result.put(this.decompress(sectorBuffer, sectorSize.coerceAtMost(result.remaining())))
+                } else
+                    result.put(sectorBuffer)
+            }
+
+            return result.order(ByteOrder.LITTLE_ENDIAN).rewind()
+        }
+    }
+
 
     override fun close() {
         stream.close()
@@ -217,9 +298,4 @@ class BlockEntry(val offset: Int, val archivedSize: Int, val size: Int, val flag
     override fun toString(): String {
         return "%08x %08x %08x %08x".format(offset, archivedSize, size, flags)
     }
-}
-
-fun printBuffer(buffer: ByteBuffer) {
-    val arr = buffer.array()
-    println(arr.map { "%02x".format(it) })
 }
