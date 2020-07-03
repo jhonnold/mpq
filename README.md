@@ -40,14 +40,14 @@ Follow the steps below to use this within project.
 
 #### Gradle
 ```gradle
-implementation group: 'me.honnold', name: 'me.honnold.mpq', version: ...
+implementation group: 'me.honnold', name: 'mpq', version: ...
 ```
 
 #### Maven
 ```xml
 <dependency>
     <groupId>me.honnold</groupId>
-    <artifactId>me.honnold.mpq</artifactId>
+    <artifactId>mpq</artifactId>
     <version>...</version>
 </dependency>
 ```
@@ -58,7 +58,7 @@ implementation group: 'me.honnold', name: 'me.honnold.mpq', version: ...
 Import the base `Archive` class and supply a path to the MPQ file.
 
 ```java
-import me.honnold.me.honnold.mpq.Archive;
+import me.honnold.mpq.Archive;
 
 public class Example {
     public static void main(String[] args) {
@@ -96,21 +96,21 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 Jay Honnold
 
-Project Link: [https://github.com/jhonnold/me.honnold.mpq-archive-parser](https://github.com/jhonnold/me.honnold.mpq-archive-parser)
+Project Link: [https://github.com/jhonnold/mpq-archive-parser](https://github.com/jhonnold/mpq-archive-parser)
 
 
 <!-- ACKNOWLEDGEMENTS -->
 ## Acknowledgements
 * [mpyq](https://github.com/eagleflo/mpyq)
 * [Scelight](https://github.com/icza/scelight)
-* [MPQ Archives](http://www.zezula.net/en/me.honnold.mpq/main.html)
+* [MPQ Archives](http://www.zezula.net/en/mpq/main.html)
 
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/jhonnold/me.honnold.mpq-archive-parser?style=flat-square
-[contributors-url]: https://github.com/jhonnold/me.honnold.mpq-archive-parser/graphs/contributors
-[issues-shield]: https://img.shields.io/github/issues/jhonnold/me.honnold.mpq-archive-parser.svg?style=flat-square
-[issues-url]: https://github.com/jhonnold/me.honnold.mpq-archive-parser/issues
-[license-shield]: https://img.shields.io/github/license/jhonnold/me.honnold.mpq-archive-parser.svg?style=flat-square
-[license-url]: https://github.com/jhonnold/me.honnold.mpq-archive-parser/blob/master/LICENSE
+[contributors-shield]: https://img.shields.io/github/contributors/jhonnold/mpq-archive-parser?style=flat-square
+[contributors-url]: https://github.com/jhonnold/mpq-archive-parser/graphs/contributors
+[issues-shield]: https://img.shields.io/github/issues/jhonnold/mpq-archive-parser.svg?style=flat-square
+[issues-url]: https://github.com/jhonnold/mpq-archive-parser/issues
+[license-shield]: https://img.shields.io/github/license/jhonnold/mpq-archive-parser.svg?style=flat-square
+[license-url]: https://github.com/jhonnold/mpq-archive-parser/blob/master/LICENSE
