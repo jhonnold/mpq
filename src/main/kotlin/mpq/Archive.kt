@@ -14,6 +14,7 @@ class Archive(path: Path) : AutoCloseable {
     val userData: UserData?
     val header: Header
     val hashTable: List<HashEntry>
+    val blockTable: List<BlockEntry>
 
     init {
         this.encryptionTable = this.prepEncryptionTable()
@@ -22,6 +23,7 @@ class Archive(path: Path) : AutoCloseable {
         this.userData = if (magic == UserData.headerId) this.readUserData() else null
         this.header = this.readHeader()
         this.hashTable = this.readHashTable()
+        this.blockTable = this.readBlockTable()
     }
 
     private fun prepEncryptionTable(): LongArray {
@@ -132,7 +134,7 @@ class Archive(path: Path) : AutoCloseable {
     private fun readHashTable(): List<HashEntry> {
         val key = this.hash("(hash table)", HashType.TABLE)
         val size = HashEntry.SIZE * header.hashTableEntries
-         
+
         val encrypted = this.readFromChannel((header.offset + header.hashTableOffset).toLong(), size)
         val decrypted = this.decrypt(encrypted, size, key)
 
@@ -144,6 +146,23 @@ class Archive(path: Path) : AutoCloseable {
             val fileBlock = decrypted.int
 
             HashEntry(fileHashA, fileHashB, language, platform, fileBlock)
+        }
+    }
+
+    private fun readBlockTable(): List<BlockEntry> {
+        val key = this.hash("(block table)", HashType.TABLE)
+        val size = BlockEntry.SIZE * header.blockTableEntries
+
+        val encrypted = this.readFromChannel((header.offset + header.blockTableOffset).toLong(), size)
+        val decrypted = this.decrypt(encrypted, size, key)
+
+        return (0 until header.blockTableEntries).map {
+            val offset = decrypted.int
+            val archivedSize = decrypted.int
+            val size = decrypted.int
+            val flags = decrypted.int
+
+            BlockEntry(offset, archivedSize, size, flags)
         }
     }
 
@@ -187,6 +206,16 @@ class HashEntry(val fileHashA: Int, val fileHashB: Int, val language: Short, val
 
     override fun toString(): String {
         return "%08x %08x %04x %04x %08x".format(fileHashA, fileHashB, language, platform, fileBlock)
+    }
+}
+
+class BlockEntry(val offset: Int, val archivedSize: Int, val size: Int, val flags: Int) {
+    companion object {
+        const val SIZE = 16
+    }
+
+    override fun toString(): String {
+        return "%08x %08x %08x %08x".format(offset, archivedSize, size, flags)
     }
 }
 

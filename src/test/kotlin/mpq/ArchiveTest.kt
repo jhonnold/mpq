@@ -71,4 +71,28 @@ class ArchiveTest {
             assertEquals(7, entry31.fileBlock)
         }
     }
+
+    @Test
+    fun blockTable() {
+        val projectDirPath = Paths.get("").toAbsolutePath()
+        val resourcePath = Paths.get(projectDirPath.toString(), "/src/test/resources/archive")
+
+        Archive(resourcePath).use {
+            val table = it.blockTable
+
+            assertEquals(17, table.size)
+
+            val entry0: BlockEntry = table[0]
+            assertEquals(0x000004D0, entry0.offset)
+            assertEquals(578, entry0.archivedSize)
+            assertEquals(578, entry0.size)
+            assertEquals(0x81000200.toInt(), entry0.flags)
+
+            val entry16: BlockEntry = table[16]
+            assertEquals(0x0001064A, entry16.offset)
+            assertEquals(348, entry16.archivedSize)
+            assertEquals(348, entry16.size)
+            assertEquals(0x81000200.toInt(), entry16.flags)
+        }
+    }
 }
