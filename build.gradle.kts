@@ -2,10 +2,11 @@ plugins {
     id("org.jetbrains.kotlin.jvm") version "1.3.72"
 
     `java-library`
+    `maven-publish`
 }
 
 repositories {
-    jcenter()
+    mavenCentral()
 }
 
 dependencies {
@@ -18,3 +19,27 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
     testImplementation("org.hamcrest:hamcrest:2.2")
 }
+
+group = "me.honnold"
+
+publishing {
+    repositories {
+        maven {
+            name = "GithubPackages"
+            url = uri("https://maven.pkg.github.com/jhonnold/mpq-archive-parser")
+            credentials {
+                username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
+                password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
+            }
+        }
+    }
+
+    publications {
+        register<MavenPublication>("gpr") {
+            from(components["java"])
+
+            artifactId = "mpq"
+        }
+    }
+}
+
