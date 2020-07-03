@@ -1,5 +1,7 @@
 package mpq
 
+import mpq.model.BlockEntry
+import mpq.model.HashEntry
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.contains
 import org.junit.Test
@@ -172,7 +174,7 @@ class ArchiveTest {
             assertEquals(28000, fileContents.remaining())
             val data = (0 until 28000 / 4).map { fileContents.int }
 
-            assertEquals(0x5443_464C, data[0])
+            assertEquals(0x4C46_4354, data[0])
             assertEquals(0x0000_0000, data[data.size - 1])
         }
     }

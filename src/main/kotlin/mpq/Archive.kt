@@ -1,14 +1,15 @@
 package mpq
 
+import mpq.model.*
+import mpq.util.ByteBufferInputStream
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
-import java.io.ByteArrayInputStream
+import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStream
 import java.io.FileInputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.channels.SeekableByteChannel
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
-import java.util.zip.Inflater
 import kotlin.math.ceil
 
 class Archive(path: Path) : AutoCloseable {
@@ -72,7 +73,7 @@ class Archive(path: Path) : AutoCloseable {
     }
 
     private fun decrypt(buffer: ByteBuffer, len: Int, key: Int): ByteBuffer {
-        val result = ByteBuffer.wrap(ByteArray(len))
+        val result = ByteBuffer.allocate(len)
         var seed1: Long = key.toLong() and 0xFFFF_FFFF
         var seed2: Long = 0xEEEE_EEEE
 
@@ -93,16 +94,12 @@ class Archive(path: Path) : AutoCloseable {
 
     private fun decompress(buffer: ByteBuffer, size: Int): ByteBuffer {
         val dest = ByteArray(size)
-        val array = buffer.array()
 
         when (val compressionType = buffer.get()) {
-            0x02.toByte() -> {
-                val inflater = Inflater()
-                inflater.setInput(array, 1, array.size - 1)
-                inflater.inflate(dest)
-                inflater.end()
-            }
-            0x10.toByte() -> BZip2CompressorInputStream(ByteArrayInputStream(array, 1, array.size - 1)).use { it.read(dest) }
+            0x02.toByte() -> DeflateCompressorInputStream(
+                    ByteBufferInputStream(buffer)).use { it.read(dest) }
+            0x10.toByte() -> BZip2CompressorInputStream(
+                    ByteBufferInputStream(buffer)).use { it.read(dest) }
             else -> throw Exception("Compression Type: %d is not supported".format(compressionType))
         }
 
@@ -199,7 +196,7 @@ class Archive(path: Path) : AutoCloseable {
         val originalPosition = this.channel.position()
         this.channel.position(position)
 
-        val buffer = ByteBuffer.wrap(ByteArray(size))
+        val buffer = ByteBuffer.allocate(size)
 
         this.channel.read(buffer)
         this.channel.position(originalPosition)
@@ -256,52 +253,12 @@ class Archive(path: Path) : AutoCloseable {
                     result.put(sectorBuffer)
             }
 
-            result.order(ByteOrder.LITTLE_ENDIAN).position(0)
-
+            result.position(0)
             return result
         }
     }
-
 
     override fun close() {
         stream.close()
     }
 }
-
-enum class HashType(val offset: Int) {
-    TABLE_OFFSET(0 shl 8),
-    HASH_A(1 shl 8),
-    HASH_B(2 shl 8),
-    TABLE(3 shl 8)
-}
-
-class UserData(val magic: ByteBuffer, val userDataSize: Int, val headerOffset: Int, val userDataHeaderSize: Int, val content: ByteBuffer) {
-    companion object {
-        val headerId: ByteBuffer = ByteBuffer.wrap(byteArrayOf('M'.toByte(), 'P'.toByte(), 'Q'.toByte(), 0x1B))
-    }
-}
-
-class Header(val offset: Int, val magic: ByteBuffer, val headerSize: Int, val archiveSize: Int, val formatVersion: Int,
-             val sectorSizeShift: Int, val hashTableOffset: Int, val blockTableOffset: Int, val hashTableEntries: Int, val blockTableEntries: Int)
-
-class HashEntry(val fileHashA: Int, val fileHashB: Int, val language: Short, val platform: Short, val fileBlock: Int) {
-    companion object {
-        const val SIZE = 16
-    }
-
-    override fun toString(): String {
-        return "%08x %08x %04x %04x %08x".format(fileHashA, fileHashB, language, platform, fileBlock)
-    }
-}
-
-class BlockEntry(val offset: Int, val archivedSize: Int, val size: Int, val flags: Int) {
-    companion object {
-        const val SIZE = 16
-    }
-
-    override fun toString(): String {
-        return "%08x %08x %08x %08x".format(offset, archivedSize, size, flags)
-    }
-}
-
-
