@@ -87,7 +87,8 @@ class Archive(path: Path) : AutoCloseable {
             result.putInt(it, value)
         }
 
-        return result.rewind()
+        result.position(0)
+        return result
     }
 
     private fun decompress(buffer: ByteBuffer, size: Int): ByteBuffer {
@@ -203,7 +204,8 @@ class Archive(path: Path) : AutoCloseable {
         this.channel.read(buffer)
         this.channel.position(originalPosition)
 
-        return buffer.order(ByteOrder.LITTLE_ENDIAN).rewind()
+        buffer.order(ByteOrder.LITTLE_ENDIAN).position(0)
+        return buffer
     }
 
     fun getFileContents(filename: String): ByteBuffer {
@@ -254,7 +256,9 @@ class Archive(path: Path) : AutoCloseable {
                     result.put(sectorBuffer)
             }
 
-            return result.order(ByteOrder.LITTLE_ENDIAN).rewind()
+            result.order(ByteOrder.LITTLE_ENDIAN).position(0)
+
+            return result
         }
     }
 
@@ -299,3 +303,5 @@ class BlockEntry(val offset: Int, val archivedSize: Int, val size: Int, val flag
         return "%08x %08x %08x %08x".format(offset, archivedSize, size, flags)
     }
 }
+
+
