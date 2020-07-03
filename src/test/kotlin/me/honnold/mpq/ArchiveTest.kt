@@ -1,7 +1,7 @@
-package mpq
+package me.honnold.mpq
 
-import mpq.model.BlockEntry
-import mpq.model.HashEntry
+import me.honnold.mpq.model.BlockEntry
+import me.honnold.mpq.model.HashEntry
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.contains
 import org.junit.Test

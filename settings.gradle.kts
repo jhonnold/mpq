@@ -1,1 +1,1 @@
-rootProject.name = "mpq-archive-parser"
+rootProject.name = "mpq"

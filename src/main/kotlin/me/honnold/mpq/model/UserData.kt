@@ -1,4 +1,4 @@
-package mpq.model
+package me.honnold.mpq.model
 
 import java.nio.ByteBuffer
 

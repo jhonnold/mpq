@@ -1,4 +1,4 @@
-package mpq.model
+package me.honnold.mpq.model
 
 enum class HashType(val offset: Int) {
     TABLE_OFFSET(0 shl 8),

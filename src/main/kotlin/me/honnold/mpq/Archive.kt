@@ -1,7 +1,7 @@
-package mpq
+package me.honnold.mpq
 
-import mpq.model.*
-import mpq.util.ByteBufferInputStream
+import me.honnold.mpq.model.*
+import me.honnold.mpq.util.ByteBufferInputStream
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
 import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStream
 import java.io.FileInputStream

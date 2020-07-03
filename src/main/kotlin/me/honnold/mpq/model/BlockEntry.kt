@@ -1,4 +1,4 @@
-package mpq.model
+package me.honnold.mpq.model
 
 class BlockEntry(val offset: Int, val archivedSize: Int, val size: Int, val flags: Int) {
     companion object {

@@ -1,4 +1,4 @@
-package mpq.util
+package me.honnold.mpq.util
 
 import java.io.InputStream
 import java.nio.ByteBuffer

@@ -1,4 +1,4 @@
-package mpq.model
+package me.honnold.mpq.model
 
 class HashEntry(val fileHashA: Int, val fileHashB: Int, val language: Short, val platform: Short, val fileBlock: Int) {
     companion object {
