@@ -1,0 +1,26 @@
+plugins {
+    id "org.jetbrains.kotlin.jvm" version "1.3.72"
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    implementation group: "org.jetbrains.kotlin", name: "kotlin-stdlib-jdk8"
+    implementation group: "org.apache.commons", name: "commons-compress", version: "1.20"
+
+    testImplementation group: "org.jetbrains.kotlin", name: "kotlin-test"
+    testImplementation group: "org.jetbrains.kotlin", name: "kotlin-test-junit"
+    testImplementation group: "org.hamcrest", name: "hamcrest", version: "2.2"
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+
+group "me.honnold"
+version "1.0.0"
