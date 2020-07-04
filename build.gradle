@@ -53,7 +53,7 @@ bintray {
     publications = ['MPQ']
 
     pkg {
-        repo = 'mpq'
-        name = 'MPQ'
+        repo = 'maven'
+        name = 'mpq'
     }
 }
