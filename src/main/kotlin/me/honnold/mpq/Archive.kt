@@ -5,14 +5,20 @@ import me.honnold.mpq.util.ByteBufferInputStream
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
 import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStream
 import java.io.FileInputStream
+import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.channels.SeekableByteChannel
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
+import java.util.*
 import kotlin.math.ceil
 
 class Archive(path: Path) : AutoCloseable {
+    companion object {
+        private val MPQA = ByteBuffer.wrap(byteArrayOf('M'.toByte(), 'P'.toByte(), 'Q'.toByte(), 0x1A))
+    }
+
     private val stream = FileInputStream(path.toFile())
     private val channel: SeekableByteChannel = stream.channel
     private val encryptionTable: LongArray
@@ -27,6 +33,10 @@ class Archive(path: Path) : AutoCloseable {
         this.encryptionTable = this.prepEncryptionTable()
 
         val magic = this.readFromChannel(0, 4)
+
+        if (magic != MPQA && magic != UserData.headerId)
+            throw InvalidArchiveException("This is not an MPQ archive!")
+
         this.userData = if (magic == UserData.headerId) this.readUserData() else null
         this.header = this.readHeader()
         this.hashTable = this.readHashTable()

@@ -11,6 +11,14 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
 class ArchiveTest {
+    @Test(expected = InvalidArchiveException::class)
+    fun invalidArchive() {
+        val projectDirPath = Paths.get("").toAbsolutePath()
+        val resourcePath = Paths.get(projectDirPath.toString(), "/src/test/resources/random.txt")
+
+        Archive(resourcePath)
+    }
+
     @Test
     fun userData() {
         val projectDirPath = Paths.get("").toAbsolutePath()
@@ -159,7 +167,7 @@ class ArchiveTest {
         val resourcePath = Paths.get(projectDirPath.toString(), "/src/test/resources/archive.sc2replay")
 
         Archive(resourcePath).use {
-            it.getFileContents("random")
+            it.getFileContents("random.txt")
         }
     }
 
